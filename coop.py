@@ -1,4 +1,6 @@
+import matplotlib.pyplot as plt
 import numpy as np
+import math
 from random import *
 
 N = 4000 #  global population
@@ -12,71 +14,192 @@ Gs = 0.02 # selfish growth rate
 Cc = 0.1 # cooperative consumption rate
 Cs = 0.2 # selfish consumption rate
 
-def genoResource(): # group resource the genotype received
+lplot = []
 
-    return r
+def genoResource(ni, nj, Gi, Ci, Gj, Cj, R): # group resource the genotype received
+    ri = (ni*Gi*Ci*R) / ((nj*Gj*Cj) + (ni*Gi*Ci))
+    return ri
 
-def genoNumber(): # number of individuals in a group with the genotype
+def genoNumber(ni, ri, Ci, K): # number of individuals in a group with the genotype
+    ni = ni + (ri/Ci) - (K*ni)
+    return ni
 
-    return n
-
-## Initialise the migrant pool with N individuals.
+#1# Initialise the migrant pool with N individuals.
 # 4 possible genotypes
 genoSize = N/4
 genotypes = [genoSize, genoSize, genoSize, genoSize] # total = N
-# 1 cooperative + small
-# 2 cooperative + large
-# 3 selfish + small
-# 4 selfish + large
+# 0 cooperative + small
+# 1 cooperative + large
+# 2 selfish + small
+# 3 selfish + large
 
-## Group formation (aggregation): Assign individuals in the migrant pool to groups
+for y in range(1):
+# for y in range(T):
+
+#2# Group formation (aggregation): Assign individuals in the migrant pool to groups
 # small size groups, size 4
-smallGroups = [] # previous all small groups
-smallGroup = []
-for _ in range(4):
-    smallGroup.append(0)
-print smallGroup
-cont = 1
-i = 0
-while (cont == 1) and (genotypes[0] > 0) and (genotypes[2] > 0):
-    print "i= " + str(i)
-    for j in range(4):
-        flip = random()
-        print "random= " + str(flip)
-        if (flip < 0.5):
-            if (genotypes[0] > 0):
-                print "coop"
-                smallGroup[j] = 0 # put coop into group
-                genotypes[0] = genotypes[0] - 1
-                print "genotypes[0]= " + str(genotypes[0])
+    print "generation " + str(y+1)
+    smallGroups = [] # previous all small groups
+    smallGroup = []
+    for _ in range(4):
+        smallGroup.append(0)
+    cont = 1
+    i = 0
+    while (cont == 1) and (genotypes[0] > 0) and (genotypes[2] > 0):
+        i += 1
+        for j in range(4):
+            flip = random()
+            if (flip < 0.5):
+                if (genotypes[0] > 0):
+                    # print "coop"
+                    smallGroup[j] = 0 # put coop into group
+                    genotypes[0] = genotypes[0] - 1
+                    # print "genotypes[0]= " + str(genotypes[0])
+                else:
+                    cont = 0
+                    break
             else:
-                cont = 0
-                break
-        else:
-            if (genotypes[2] > 0):
-                print "selfish"
-                smallGroup[j] = 2 # put selfish into group
-                genotypes[2] = genotypes[2] - 1
-                print "genotypes[2]= " + str(genotypes[2])
+                if (genotypes[2] > 0):
+                    # print "selfish"
+                    smallGroup[j] = 2 # put selfish into group
+                    genotypes[2] = genotypes[2] - 1
+                    # print "genotypes[2]= " + str(genotypes[2])
+                else:
+                    cont = 0
+                    break
+        # print smallGroup
+        smallGroups = np.append(smallGroups, smallGroup) # append into all small groups
+
+    smallGroups = np.reshape(smallGroups, (-1, 4))
+    if (j != 3):
+        smallGroups = smallGroups[:-1]
+    print smallGroups
+
+    # large size groups, size 40
+    largeGroups = [] # all large grops
+    largeGroup = []
+    for _ in range(40):
+        largeGroup.append(0)
+    cont = 1
+    i = 0
+    while (cont == 1) and (genotypes[1] > 0) and (genotypes[3] > 0):
+        i += 1
+        for j in range(40):
+            # print j
+            flip = random()
+            if (flip < 0.5):
+                if (genotypes[1] > 0):
+                    # print "coop"
+                    largeGroup[j] = 1 # put coop into group
+                    genotypes[1] = genotypes[1] - 1
+                    # print "genotypes[1]= " + str(genotypes[1])
+                else:
+                    cont = 0
+                    break
             else:
-                cont = 0
-                break
-    print smallGroup
-    smallGroups = np.append(smallGroups, smallGroup) # append into all small groups
-    # if (i == 10):
-    #     break
-    # print "smallGroups" + str(smallGroups)
-    i += 1
+                if (genotypes[3] > 0):
+                    # print "selfish"
+                    largeGroup[j] = 3 # put selfish into group
+                    genotypes[3] = genotypes[3] - 1
+                    # print "genotypes[3]= " + str(genotypes[3])
+                else:
+                    cont = 0
+                    break
+        # print largeGroup
+        largeGroups = np.append(largeGroups, largeGroup) # append into all small groups
 
-smallGroups = np.reshape(smallGroups, (-1, 4))
-print smallGroups
-print genotypes
+    largeGroups = np.reshape(largeGroups, (-1, 40))
+    print largeGroups
+    if (j != 39):
+        largeGroups = largeGroups[:-1]
+    # print largeGroups
 
-# large size groups, size 40
-largeGroups = [] # all large grops
-largeGroup = [None] * 40
+    #3# Reproduction: Perform reproduction within groups for t time-steps
+    genotypes = [0, 0, 0, 0]
+    # reproduce small groups
+    # print smallGroups.shape
+    # print smallGroups.shape[0]
+    for j in range(smallGroups.shape[0]):
+        g0 = 0 # number of genotype 0
+        g2 = 0 # number of genotype 2
+        for i in range(4):
+            # print smallGroups[j][i]
+            if smallGroups[j][i] == 0:
+                g0 += 1
+            else:
+                g2 += 1
+        # print "g0 " + str(g0)
+        # print "g2 " + str(g2)
 
-# Reproduction: Perform reproduction within groups for t time-steps
-# Migrant pool formation (dispersal): Return the progeny of each group to the migrant pool.
-# Maintaining the global carrying capacity: Rescale the migrant pool back to size N, retaining the proportion of individuals with each genotype.
-# Iteration: Repeat from step 2 onwards for a number of generations, T
+        for x in range(t):
+            # compute resource consumed
+            r0 = genoResource(g0, g2, Gc, Cc, Gs, Cs, R_small)
+            r2 = R_small - r0
+            # print "resource consumed by g0 " + str(r0)
+            # print "resource consumed by g2 " + str(r2)
+
+            # reproduce genotypes
+            g0 = int(genoNumber(g0, r0, Cc, K)) # g0
+            # print "number of g0 " + str(g0)
+            g2 = int(genoNumber(g2, r2, Cs, K)) # g2
+            # print "number of g2 " + str(g2)
+            genotypes[0] = genotypes[0] + g0
+            genotypes[2] = genotypes[2] + g2
+
+    # reproduce large groups
+    # print largeGroups.shape
+    # print largeGroups.shape[0]
+    for j in range(largeGroups.shape[0]):
+        g1 = 0 # number of genotype 0
+        g3 = 0 # number of genotype 2
+        for i in range(40):
+            # print largeGroups[j][i]
+            if largeGroups[j][i] == 1:
+                g1 += 1
+            else:
+                g3 += 1
+        # print "g1 " + str(g1)
+        # print "g3 " + str(g3)
+
+        for x in range(t):
+            # compute resource consumed
+            r1 = genoResource(g1, g3, Gc, Cc, Gs, Cs, R_large)
+            r3 = R_large - r1
+            # print "resource consumed by g1 " + str(r1)
+            # print "resource consumed by g3 " + str(r3)
+
+            # reproduce genotypes
+            g1 = int(genoNumber(g1, r1, Cc, K)) # g1
+            # print "number of g1 " + str(g1)
+            g3 = int(genoNumber(g3, r3, Cs, K)) # g3
+            # print "number of g3 " + str(g3)
+
+    #4# Migrant pool formation (dispersal): Return the progeny of each group to the migrant pool.
+            genotypes[1] = genotypes[1] + g1
+            genotypes[3] = genotypes[3] + g3
+    # print genotypes
+
+    #5# Maintaining the global carrying capacity: Rescale the migrant pool back to size N, retaining the proportion of individuals with each genotype.
+    groupSum = np.sum(genotypes)
+    # print groupSum
+    d = float(groupSum)/N
+    d = math.ceil(d)
+    d = int(d)
+    # print d
+    genotypes = np.array(genotypes, dtype=float)
+    genotypes = genotypes/d
+    genotypes = np.array(genotypes, dtype=int)
+    print genotypes
+    # largeNum = genotypes[1] + genotypes[3]
+    # lplot.append(largeNum)
+    # selfNum = genotypes[2] + genotypes[3]
+    # splot.append(selfNum)
+    # gplot.append(y+1)
+    print np.sum(genotypes)
+
+#6# Iteration: Repeat from step 2 onwards for a number of generations, T
+
+# plt.plot(lplot)
+# plt.xlabel('Generation')
+# plt.ylabel('large group')
+# plt.savefig('plot.png', bbox_inches='tight')

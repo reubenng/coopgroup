@@ -1,14 +1,15 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+from matplotlib.legend_handler import HandlerLine2D
 from random import *
 
 N = 4000 #  global population
 t = 4 # time spent in group
 T = 1000 # number of generation
 K = 0.1 # death rate
-R_small = 4 # total resource, R for small group of 4
-R_large = 50 # R for large group of 40
+R_small = 4.0 # total resource, R for small group of 4
+R_large = 50.0 # R for large group of 40
 Gc = 0.018 # cooperative growth rate
 Gs = 0.02 # selfish growth rate
 Cc = 0.1 # cooperative consumption rate
@@ -17,29 +18,42 @@ Cs = 0.2 # selfish consumption rate
 # lplot = []
 geno0, geno1, geno2, geno3 = [], [], [], []
 
+def consume(x):
+    y = (23.0 * x - 20)/18
+    # y = ((23.0*x*x)-(184*x)+2960)/648
+    return y
+
 def genoResource(ni, nj, Gi, Ci, Gj, Cj, R): # group resource the genotype received
-    ri = (ni*Gi*Ci*R) / ((nj*Gj*Cj) + (ni*Gi*Ci))
+    ri = (float(ni)*Gi*Ci*R) / ((float(nj)*Gj*Cj) + (float(ni)*Gi*Ci))
     return ri
 
 def genoNumber(ni, ri, Ci, K): # number of individuals in a group with the genotype
-    n = ni + (ri/Ci) - (K*ni)
+    n = float(ni) + (ri/Ci) - (K*float(ni))
     return n
 
 #1# Initialise the migrant pool with N individuals.
 # 4 possible genotypes
-genoSize = N/4
+genoSize = N/4.0
 genotypes = [genoSize, genoSize, genoSize, genoSize] # total = N
 # 0 cooperative + small
 # 1 cooperative + large
 # 2 selfish + small
 # 3 selfish + large
 
+genoPlot = [0, 0, 0, 0] # for plotting
+geno0.append(0.25)
+geno1.append(0.25)
+geno2.append(0.25)
+geno3.append(0.25)
+
 # for y in range(1):
-for y in range(T):
+# for y in range(T):
+for y in range(30):
 
 #2# Group formation (aggregation): Assign individuals in the migrant pool to groups
 # small size groups, size 4
     print "generation " + str(y+1)
+    print "genotypes= " + str(genotypes)
     smallGroups = [] # previous all small groups
     smallGroup = []
     for _ in range(4):
@@ -66,6 +80,7 @@ for y in range(T):
                 else:
                     cont = 0
                     break
+        # print "genotypes " + str(genotypes)
         # print smallGroup
         smallGroups = np.append(smallGroups, smallGroup) # append into all small groups
 
@@ -73,9 +88,10 @@ for y in range(T):
     if (j != 3):
         smallGroups = smallGroups[:-1]
     # print smallGroups
+    print "genotypes " + str(genotypes)
 
     # large size groups, size 40
-    largeGroups = [] # all large grops
+    largeGroups = [] # all large groups
     largeGroup = []
     for _ in range(40):
         largeGroup.append(0)
@@ -102,12 +118,13 @@ for y in range(T):
                     cont = 0
                     break
         # print largeGroup
-        largeGroups = np.append(largeGroups, largeGroup) # append into all small groups
+        largeGroups = np.append(largeGroups, largeGroup) # append into all large groups
 
     largeGroups = np.reshape(largeGroups, (-1, 40))
     if (j != 39):
         largeGroups = largeGroups[:-1]
     # print largeGroups
+    # print "genotypes " + str(genotypes)
 
     #3# Reproduction: Perform reproduction within groups for t time-steps
     genotypes = [0, 0, 0, 0]
@@ -122,25 +139,37 @@ for y in range(T):
                 g2 += 1
         # print "g0 " + str(g0)
         # print "g2 " + str(g2)
-
+        # r0 = float(g0)/(g0+g2)
+        # r2 = float(g2)/(g0+g2)
+        # print "ratio of g0 " + str(r0)
+        # print "ratio of g2 " + str(r2)
+        totalI = R_small
         for x in range(t):
             # compute resource consumed
-            g0t = g0
-            g2t = g2
-            r0 = genoResource(g0t, g2t, Gc, Cc, Gs, Cs, R_small)
-            r2 = R_small - r0
+            print "size " + str(totalI)
+            Rn = consume(totalI)
+            print "total resource " + str(Rn)
+            r0 = genoResource(g0, g2, Gc, Cc, Gs, Cs, Rn)
+            r2 = Rn - r0
             # print "resource consumed by g0 " + str(r0)
             # print "resource consumed by g2 " + str(r2)
 
             # reproduce genotypes
-            g0 = int(genoNumber(g0t, r0, Cc, K)) # g0
+            g0 = genoNumber(g0, r0, Cc, K) # g0
+            g2 = genoNumber(g2, r2, Cs, K) # g2
             # print "number of g0 " + str(g0)
-            g2 = int(genoNumber(g2t, r2, Cs, K)) # g2
             # print "number of g2 " + str(g2)
-
+            # r0 = float(g0)/(g0+g2)
+            # r2 = float(g2)/(g0+g2)
+            # print "ratio of g0 " + str(r0)
+            # print "ratio of g2 " + str(r2)
+            totalI = g0 + g2
+        # g0 = g0t - g0
+        # g2 = g2t - g2
         #4# Migrant pool formation (dispersal): Return the progeny of each group to the migrant pool.
         genotypes[0] = genotypes[0] + g0
         genotypes[2] = genotypes[2] + g2
+    print "genotypes " + str(genotypes)
 
     # reproduce large groups
     for j in range(largeGroups.shape[0]):
@@ -153,55 +182,74 @@ for y in range(T):
                 g3 += 1
         # print "g1 " + str(g1)
         # print "g3 " + str(g3)
-
+        # r1 = float(g1)/(g1+g3)
+        # r3 = float(g3)/(g1+g3)
+        # print "ratio of g1 " + str(r1)
+        # print "ratio of g3 " + str(r3)
+        totalI = R_large
         for x in range(t):
-            g1t = g1
-            g3t = g3
             # compute resource consumed
-            r1 = genoResource(g1t, g3t, Gc, Cc, Gs, Cs, R_large)
-            r3 = R_large - r1
+            # print "size " + str(totalI)
+            Rn = consume(totalI)
+            # print "total resource " + str(Rn)
+            r1 = genoResource(g1, g3, Gc, Cc, Gs, Cs, Rn)
+            r3 = Rn - r1
             # print "resource consumed by g1 " + str(r1)
             # print "resource consumed by g3 " + str(r3)
 
             # reproduce genotypes
-            g1 = int(genoNumber(g1t, r1, Cc, K)) # g1
+            g1 = (genoNumber(g1, r1, Cc, K)) # g1
+            g3 = (genoNumber(g3, r3, Cs, K)) # g3
             # print "number of g1 " + str(g1)
-            g3 = int(genoNumber(g3t, r3, Cs, K)) # g3
             # print "number of g3 " + str(g3)
-
+            # r1 = float(g1)/(g1+g3)
+            # r3 = float(g3)/(g1+g3)
+            # print "ratio of g1 " + str(r1)
+            # print "ratio of g3 " + str(r3)
+            totalI = g1 + g3
+        # g1 = g1t - g1
+        # g3 = g3t - g3
     #4# Migrant pool formation (dispersal)
         genotypes[1] = genotypes[1] + g1
         genotypes[3] = genotypes[3] + g3
-    print genotypes
 
+    # print "genotypes " + str(genotypes)
     #5# Maintaining the global carrying capacity: Rescale the migrant pool back to size N, retaining the proportion of individuals with each genotype.
     groupSum = np.sum(genotypes)
     # print groupSum
-    d = float(groupSum)/N
-    d = math.ceil(d)
-    d = int(d)
+    d = (groupSum)/N
+    # d = math.ceil(d)
+    # d = int(d)
     # print d
-    genotypes = np.array(genotypes, dtype=float)
     genotypes = genotypes/d
+    genoSum = np.sum(genotypes)
+    # print "genoSum= " + str(genoSum)
+    genoPlot[0] = genotypes[0]/genoSum
+    genoPlot[1] = genotypes[1]/genoSum
+    genoPlot[2] = genotypes[2]/genoSum
+    genoPlot[3] = genotypes[3]/genoSum
+    # print "genotypes= " + str(genotypes)
     genotypes = np.array(genotypes, dtype=int)
-    print genotypes
+    genotypes = np.array(genotypes, dtype=float)
+
     # largeNum = genotypes[1] + genotypes[3]
     # lplot.append(largeNum)
     # selfNum = genotypes[2] + genotypes[3]
     # splot.append(selfNum)
-    geno0.append(genotypes[0])
-    geno1.append(genotypes[1])
-    geno2.append(genotypes[2])
-    geno3.append(genotypes[3])
-    print np.sum(genotypes)
+    # print genoPlot
+    geno0.append(genoPlot[0])
+    geno1.append(genoPlot[1])
+    geno2.append(genoPlot[2])
+    geno3.append(genoPlot[3])
 
 #6# Iteration: Repeat from step 2 onwards for a number of generations, T
 
-# plt.plot(lplot)
-plt.plot(geno0)
-plt.plot(geno1)
-plt.plot(geno2)
-plt.plot(geno3)
+plt.plot(geno0, label='cooperative + small')
+plt.plot(geno1, label='cooperative + large')
+plt.plot(geno2, label='selfish + small')
+plt.plot(geno3, label='selfish + large')
+plt.legend(loc='lower right', shadow=True, fontsize='medium')
 plt.xlabel('Generation')
-plt.ylabel('global genotype')
+plt.ylabel('Global genotype frequency')
 plt.savefig('plot.png', bbox_inches='tight')
+plt.show()

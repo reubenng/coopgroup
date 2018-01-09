@@ -14,6 +14,7 @@ Gc = 0.018 # cooperative growth rate
 Gs = 0.02 # selfish growth rate
 Cc = 0.1 # cooperative consumption rate
 Cs = 0.2 # selfish consumption rate
+
 def consume(x):
     y = (23.0 * x - 20)/18
     # y = ((23.0*x*x)-(184*x)+2960)/648
@@ -44,14 +45,17 @@ geno2.append(0.25)
 geno3.append(0.25)
 type0, type1 = [], []
 
-# for y in range(2):
 # for y in range(T):
-for y in range(100):
+for y in range(120):
 
 #2# Group formation (aggregation): Assign individuals in the migrant pool to groups
 # small size groups, size 4
     print "generation " + str(y+1)
     print "genotypes= " + str(genotypes)
+
+    pool = genotypes
+    pool = np.array(pool, dtype=float)
+
     smallGroups = [] # previous all small groups
     smallGroup = []
     for _ in range(4):
@@ -61,35 +65,34 @@ for y in range(100):
     totalG = genotypes[0] + genotypes[2]
     if (totalG != 0):
         g0p = float(genotypes[0])/totalG
-        print "g0p= " + str(g0p)
         g2p = float(genotypes[2])/totalG
-        print "g2p= " + str(g2p)
-    # print "g0p= " + str(g0p)
-    # print "g2p= " + str(g2p)
+
         while (cont == 1) and (genotypes[0] > 0) and (genotypes[2] > 0):
             for j in range(4):
-                flip = random()
-                # print "flip= " + str(flip)
-                if (flip <= g0p):
-                    if (genotypes[0] > 0):
-                        # print "coop"
-                        smallGroup[j] = 0 # put coop into group
-                        genotypes[0] = genotypes[0] - 1
-                        # print "genotypes[0]= " + str(genotypes[0])
+                totalG = genotypes[0] + genotypes[2]
+                # print "totalG " + str(totalG)
+                if (totalG != 0):
+                    g0p = float(genotypes[0])/totalG
+                    g2p = float(genotypes[2])/totalG
+                    # print "genotypes[0] " + str(genotypes[0])
+                    # print "genotypes[2] " + str(genotypes[2])
+                    # print "g0p " + str(g0p)
+                    # print "g2p " + str(g2p)
+                    flip = random()
+                    if (flip <= g0p):
+                        if (genotypes[0] > 0):
+                            smallGroup[j] = 0 # put coop into group
+                            genotypes[0] = genotypes[0] - 1
+                        else:
+                            cont = 0
+                            break
                     else:
-                        cont = 0
-                        break
-                else:
-                    if (genotypes[2] > 0):
-                        # print "selfish"
-                        smallGroup[j] = 2 # put selfish into group
-                        genotypes[2] = genotypes[2] - 1
-                        # print "genotypes[2]= " + str(genotypes[2])
-                    else:
-                        cont = 0
-                        break
-            # print "genotypes " + str(genotypes)
-            # print smallGroup
+                        if (genotypes[2] > 0):
+                            smallGroup[j] = 2 # put selfish into group
+                            genotypes[2] = genotypes[2] - 1
+                        else:
+                            cont = 0
+                            break
             smallGroups = np.append(smallGroups, smallGroup) # append into all small groups
             skip = 0
         else:
@@ -98,7 +101,7 @@ for y in range(100):
     smallGroups = np.reshape(smallGroups, (-1, 4))
     if (j != 3):
         smallGroups = smallGroups[:-1]
-    print smallGroups
+    # print smallGroups
 
     # large size groups, size 40
     largeGroups = [] # all large groups
@@ -111,30 +114,26 @@ for y in range(100):
     if (totalG != 0):
         g1p = float(genotypes[1])/totalG
         g3p = float(genotypes[3])/totalG
-    # print "g1p= " + str(g1p)
-    # print "g3p= " + str(g3p)
         while (cont == 1) and (genotypes[1] > 0) and (genotypes[3] > 0):
             for j in range(40):
-                flip = random()
-                if (flip <= g1p):
-                    if (genotypes[1] > 0):
-                        # print "coop"
-                        largeGroup[j] = 1 # put coop into group
-                        genotypes[1] = genotypes[1] - 1
-                        # print "genotypes[1]= " + str(genotypes[1])
+                totalG = genotypes[1] + genotypes[3]
+                if (totalG != 0):
+                    g1p = float(genotypes[1])/totalG
+                    flip = random()
+                    if (flip <= g1p):
+                        if (genotypes[1] > 0):
+                            largeGroup[j] = 1 # put coop into group
+                            genotypes[1] = genotypes[1] - 1
+                        else:
+                            cont = 0
+                            break
                     else:
-                        cont = 0
-                        break
-                else:
-                    if (genotypes[3] > 0):
-                        # print "selfish"
-                        largeGroup[j] = 3 # put selfish into group
-                        genotypes[3] = genotypes[3] - 1
-                        # print "genotypes[3]= " + str(genotypes[3])
-                    else:
-                        cont = 0
-                        break
-            # print largeGroup
+                        if (genotypes[3] > 0):
+                            largeGroup[j] = 3 # put selfish into group
+                            genotypes[3] = genotypes[3] - 1
+                        else:
+                            cont = 0
+                            break
             largeGroups = np.append(largeGroups, largeGroup) # append into all large groups
             skip = 0
         else:
@@ -143,7 +142,7 @@ for y in range(100):
     largeGroups = np.reshape(largeGroups, (-1, 40))
     if (j != 39):
         largeGroups = largeGroups[:-1]
-    print largeGroups
+    # print largeGroups
 
     #3# Reproduction: Perform reproduction within groups for t time-steps
     if (skip == 0):
@@ -157,32 +156,25 @@ for y in range(100):
                 g0 += 1
             else:
                 g2 += 1
-        # print "g0 " + str(g0)
-        # print "g2 " + str(g2)
-        # r0 = float(g0)/(g0+g2)
-        # r2 = float(g2)/(g0+g2)
-        # print "ratio of g0 " + str(r0)
-        # print "ratio of g2 " + str(r2)
         totalI = g0 + g2
         for x in range(t):
             # compute resource consumed
-            # print "size " + str(totalI)
-            Rn = consume(totalI)
-            # print "total resource " + str(Rn)
-            r0 = genoResource(g0, g2, Gc, Cc, Gs, Cs, R_small)
+            # Rn = consume(totalI)
+            print "selfish " + str(pool[2]/(pool[0]+pool[2]))
+            if (pool[2]/(pool[0]+pool[2]) >= 0.5): # if cheaters more than 80%
+                nGs = Gc # growth and consumption rates become that of coop
+                # nCs = Cc
+            else:
+                nGs = Gs
+                # nCs = Cs
+            r0 = genoResource(g0, g2, Gc, Cc, nGs, Cs, R_small)
             r2 = R_small - r0
-            # print "resource consumed by g0 " + str(r0)
-            # print "resource consumed by g2 " + str(r2)
 
             # reproduce genotypes
             g0 = int(genoNumber(g0, r0, Cc, K)) # g0
             g2 = int(genoNumber(g2, r2, Cs, K)) # g2
-            # print "number of g0 " + str(g0)
-            # print "number of g2 " + str(g2)
             # r0 = float(g0)/(g0+g2)
             # r2 = float(g2)/(g0+g2)
-            # print "ratio of g0 " + str(r0)
-            # print "ratio of g2 " + str(r2)
             # totalI = g0 + g2
             # pScale = totalI/4.0
             # g0 = g0/pScale
@@ -203,42 +195,36 @@ for y in range(100):
                 g1 += 1
             else:
                 g3 += 1
-        # print "g1 " + str(g1)
-        # print "g3 " + str(g3)
-        # r1 = float(g1)/(g1+g3)
-        # r3 = float(g3)/(g1+g3)
-        # print "ratio of g1 " + str(r1)
-        # print "ratio of g3 " + str(r3)
         totalI = g1 + g3
         for x in range(t):
             # compute resource consumed
-            # print "size " + str(totalI)
-            Rn = consume(totalI)
-            # print "total resource " + str(Rn)
-            r1 = genoResource(g1, g3, Gc, Cc, Gs, Cs, R_large)
+            # Rn = consume(totalI)
+
+            print "selfish " + str(pool[3]/(pool[1]+pool[3]))
+            if (pool[3]/(pool[1]+pool[3]) >= 0.5): # if cheaters more than 80%
+                nGs = Gc # growth and consumption rates become that of coop
+                # nCs = Cc
+                print "Cc "
+            else:
+                nGs = Gs
+                # nCs = Cs
+                print "Cs "
+            r1 = genoResource(g1, g3, Gc, Cc, nGs, Cs, R_large)
             r3 = R_large - r1
-            # print "resource consumed by g1 " + str(r1)
-            # print "resource consumed by g3 " + str(r3)
             # rScale = Rn/5.0
             # p1 = r1/rScale # ratio in portion
             # p3 = r3/rScale
-
             # scale = (g1+g3)/4.0 # scale down to total 4
             # g1 = g1/scale
             # g3 = g3/scale
-            # print "scale " + str(scale)
 
             # reproduce genotypes
             g1 = int((genoNumber(g1, r1, Cc, K))) # g1
             g3 = int((genoNumber(g3, r3, Cs, K))) # g3
-            # print "number of g1 " + str(g1)
-            # print "number of g3 " + str(g3)
             # g1 = g1 * scale#scale back up
             # g3 = g3 * scale
             # r1 = float(g1)/(g1+g3)
             # r3 = float(g3)/(g1+g3)
-            # print "ratio of g1 " + str(r1)
-            # print "ratio of g3 " + str(r3)
             # totalI = g1 + g3
             # pscale = totalI/40.0
             # g1 = g1/pScale
@@ -250,27 +236,23 @@ for y in range(100):
         genotypes[3] = genotypes[3] + g3
         # print "genotypes " + str(genotypes)
 
-    # print "genotypes " + str(genotypes)
     #5# Maintaining the global carrying capacity: Rescale the migrant pool back to size N, retaining the proportion of individuals with each genotype.
     groupSum = np.sum(genotypes)
-    print groupSum
+    # print groupSum
     d = float(groupSum)/N
     d = math.ceil(d)
     d = int(d)
-    # print d
     genotypes = np.array(genotypes, dtype=float)
     if (d != 0):
         genotypes = genotypes/d
-    # genotypes = np.array(genotypes, dtype=int)
-    print "genotypes= " + str(genotypes)
+    # print "genotypes= " + str(genotypes)
     genoSum = np.sum(genotypes)
-    # print "genoSum= " + str(genoSum)
     genoPlot[0] = genotypes[0]/genoSum
     genoPlot[1] = genotypes[1]/genoSum
     genoPlot[2] = genotypes[2]/genoSum
     genoPlot[3] = genotypes[3]/genoSum
     genotypes = np.array(genotypes, dtype=int)
-    print "genotypes= " + str(genotypes)
+    # print "genotypes= " + str(genotypes)
 
     largeNum = genoPlot[1] + genoPlot[3]
     type0.append(largeNum)
@@ -286,7 +268,7 @@ for y in range(100):
 
 # plt.plot(type0, label='Large group size')
 # plt.plot(type1, label='Selfish resource usage')
-# plt.legend(loc='top right', shadow=True, fontsize='medium')
+# plt.legend(loc='center right', shadow=True, fontsize='xx-large')
 # plt.xlabel('Generation')
 # plt.ylabel('Global frequency')
 # plt.savefig('plot.png', bbox_inches='tight')
@@ -295,7 +277,7 @@ plt.plot(geno0, label='cooperative + small')
 plt.plot(geno1, label='cooperative + large')
 plt.plot(geno2, label='selfish + small')
 plt.plot(geno3, label='selfish + large')
-plt.legend(loc='lower right', shadow=True, fontsize='medium')
+# plt.legend(loc='lower right', shadow=True, fontsize='large')
 plt.xlabel('Generation')
 plt.ylabel('Global genotype frequency')
 plt.savefig('plot.png', bbox_inches='tight')
